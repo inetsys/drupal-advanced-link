@@ -1,0 +1,177 @@
+<?php
+
+// Link types
+
+define('ADVANCED_LINK_TYPE_LOCAL_LINK', 01);
+define('ADVANCED_LINK_TYPE_EXTERNAL_LINK', 02);
+define('ADVANCED_LINK_TYPE_PDF_DOC', 04);
+define('ADVANCED_LINK_TYPE_WORD_DOC', 010);
+define('ADVANCED_LINK_TYPE_EXCEL_DOC', 020);
+define('ADVANCED_LINK_TYPE_PPT_DOC', 040);
+
+define('ADVANCED_LINK_TYPE_LINK', ADVANCED_LINK_TYPE_LOCAL_LINK | ADVANCED_LINK_TYPE_EXTERNAL_LINK);
+define('ADVANCED_LINK_TYPE_FILE', ADVANCED_LINK_TYPE_PDF_DOC | ADVANCED_LINK_TYPE_WORD_DOC | ADVANCED_LINK_TYPE_EXCEL_DOC | ADVANCED_LINK_TYPE_PPT_DOC);
+
+// Target
+
+define ('ADVANCED_LINK_TARGET_SELF', 01);
+define ('ADVANCED_LINK_TARGET_BLANK', 02);
+
+// Link privacy
+
+define('ADVANCED_LINK_PRIVACY_PUBLIC', 01);
+define('ADVANCED_LINK_PRIVACY_PRIVATE', 02);
+
+/** Implementation of hook_perm */
+function advanced_link_perm(){
+	return array(
+		'view private links' => t('View private links')
+	);
+}
+
+/** Implementation of hook_theme */
+function advanced_link_theme($existing, $type, $theme, $path){
+	return array(
+		'advanced_link' => array(
+			'variables' => array(
+				'url' => null,
+				'label' => null,
+				'type' => null,
+				'target' => ADVANCED_LINK_TARGET_SELF,
+				'privacy' => ADVANCED_LINK_PRIVACY_PUBLIC,
+			),
+			'file' => 'advanced_link.theme.inc',
+		),
+		'advanced_link_blocked' => array(
+			'variables' => array(
+				'label' => null,
+				'type' => null,
+			),
+			'file' => 'advanced_link.theme.inc',
+		)
+	);
+}
+
+/** Implementation of hook_field_info */
+function advanced_link_field_info(){
+	return array(
+		'advanced_link' => array(
+			'label' => t('Extended link'),
+			'description' => t('Link with advanced settings: privacy, display...'),
+			'settings' => array(),
+			'default_widget' => 'advanced_link_default_widget',
+			'default_formatter' => 'advanced_link_default_formatter',
+		),
+	);
+}
+
+/** Implementation of hook_field_is_empty */
+function advanced_link_field_is_empty($item, $field){
+	$url = trim($item['url']);
+	$label = trim($item['label']);
+
+	return empty($url) && empty($label);
+}
+
+/** Implementation of hook_field_widget_info */
+function advanced_link_field_widget_info(){
+	return array(
+		'advanced_link_default_widget' => array(
+			'label' => t('Advanced link'),
+			'description' => t('Default form for extended links'),
+			'field types' => array('advanced_link'),
+			'settings' => array()
+		),
+	);
+}
+
+/** Implementation of hook_field_widget_form */
+function advanced_link_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element){
+	if(module_exists('imce')){
+		$form['#attached']['js']['advanced_link'] = drupal_get_path('module', 'advanced_link').'/advanced_link.js';
+	}
+
+	$defaults = isset($items[$delta]) ? $items[$delta] : array();
+
+	$url_field_id = 'edit-'.str_replace('_', '-', $element['#field_name']).'-'.$element['#language'].'-'.$element['#delta'].'-url';
+
+	$element['url'] = array(
+		'#type' => 'textfield',
+		'#title' => t('URL'),
+		'#description' => t('Local or full URL of this link'),
+		'#default_value' => isset($defaults['url']) ? $defaults['url'] : '',
+	);
+	if(module_exists('imce')){
+		$element['url']['#field_suffix'] = '<a href="#" class="advanced_link_imce" data-target="'.$url_field_id.'">Open file manager</a>';
+	}
+
+	$element['label'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Link text'),
+		'#default_value' => isset($defaults['label']) ? $defaults['label'] : '',
+	);
+	$element['type'] = array(
+		'#type' => 'select',
+		'#title' => t('Type'),
+		'#options' => array(
+			ADVANCED_LINK_TYPE_LOCAL_LINK => t('Local link'),
+			ADVANCED_LINK_TYPE_EXTERNAL_LINK => t('External link'),
+			ADVANCED_LINK_TYPE_PDF_DOC => t('PDF document'),
+			ADVANCED_LINK_TYPE_WORD_DOC => t('Word document'),
+			ADVANCED_LINK_TYPE_EXCEL_DOC => t('Excel document'),
+			ADVANCED_LINK_TYPE_PPT_DOC => t('PPT document')
+		),
+		'#default_value' => isset($defaults['type']) ? $defaults['type'] : ADVANCED_LINK_TYPE_LOCAL_LINK,
+	);
+	$element['target'] = array(
+		'#type' => 'select',
+		'#title' => t('Open link'),
+		'#options' => array(
+			ADVANCED_LINK_TARGET_SELF => t('Open in the same window'),
+			ADVANCED_LINK_TARGET_BLANK => t('Open in a new window'),
+		),
+		'#default_value' => isset($defaults['target']) ? $defaults['target'] : ADVANCED_LINK_TARGET_SELF,
+	);
+	$element['privacy'] = array(
+		'#type' => 'select',
+		'#title' => t('Privacy'),
+		'#options' => array(
+			ADVANCED_LINK_PRIVACY_PUBLIC => t('Public'),
+			ADVANCED_LINK_PRIVACY_PRIVATE => t('Private')
+		),
+		'#default_value' => isset($defaults['privacy']) ? $defaults['privacy'] : ADVANCED_LINK_PRIVACY_PUBLIC,
+	);
+
+	return $element;
+}
+
+/** Implementation of hook_field_formatter_info */
+function advanced_link_field_formatter_info(){
+	return array(
+		'advanced_link_default_formatter' => array(
+			'label' => t('Default'),
+			'field types' => array('advanced_link'),
+		)
+	);
+}
+
+/** Implementation of hook_field_formatter_view */
+function advanced_link_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display){
+	$element = array();
+
+	switch($display['type']){
+		case 'advanced_link_default_formatter':
+			foreach($items as $delta => $item){
+				if($item['privacy'] == ADVANCED_LINK_PRIVACY_PUBLIC || user_access('view private links')){
+					$output = theme('advanced_link', $item);
+				}else{
+					$output = theme('advanced_link_blocked', $item);
+				}
+
+				$element[$delta] = array('#markup' => $output);
+			}
+			break;
+	}
+
+	return $element;
+}

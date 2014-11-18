@@ -1,0 +1,30 @@
+<?php
+
+function advanced_link_field_schema($field){
+	return array(
+		'columns' => array(
+			'url' => array(
+				'type' => 'text',
+				'length' => 100
+			),
+			'label' => array(
+				'type' => 'text',
+				'length' => 100
+			),
+			'type' => array(
+				'type' => 'int',
+				'not null' => true,
+				'default' => 1
+			),
+			'target' => array(
+				'type' => 'text',
+				'length' => 25,
+			),
+			'privacy' => array(
+				'type' => 'int',
+				'not null' => true,
+				'default' => 0
+			),
+		)
+	);
+}

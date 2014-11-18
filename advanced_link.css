@@ -1,0 +1,39 @@
+.local-link {
+	padding-left: 20px;
+	background: transparent url('images/ico-link.png') left center no-repeat;
+}
+
+.external-link {
+	padding-left: 20px;
+	background: transparent url('images/ico-external-link.png') left center no-repeat;
+}
+
+.pdf-link {
+	padding-left: 20px;
+	background: transparent url('images/ico-pdf.png') left center no-repeat;
+}
+
+.word-link {
+	padding-left: 20px;
+	background: transparent url('images/ico-word.png') left center no-repeat;
+}
+
+.excel-link {
+	padding-left: 20px;
+	background: transparent url('images/ico-excel.png') left center no-repeat;
+}
+
+.ppt-link {
+	padding-left: 20px;
+	background: transparent url('images/ico-ppt.png') left center no-repeat;
+}
+
+.blocked-link {
+	padding-left: 20px;
+	background: transparent url('images/ico-lock.png') left center no-repeat;
+	color: darkred;
+	cursor: not-allowed;
+}
+.blocked-link:hover {
+	text-decoration: underline;
+}

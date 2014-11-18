@@ -1,0 +1,7 @@
+name = Advanced link
+description = Manages links in content: display, type and privacy
+version = 7.x-1.1
+core = 7.x
+package = Fields
+
+stylesheets[all][] = advanced_link.css
