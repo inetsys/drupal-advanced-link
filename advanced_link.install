@@ -13,7 +13,6 @@ function advanced_link_field_schema($field){
 			),
 			'type' => array(
 				'type' => 'int',
-				'not null' => true,
 				'default' => 1
 			),
 			'target' => array(

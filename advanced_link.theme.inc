@@ -3,6 +3,7 @@
 function theme_advanced_link($vars){
 	$url = ltrim($vars['url'], '/');
 	$label = $vars['label'];
+	$is_html = $vars['html'];
 	$target = $vars['target'];
 	$type = $vars['type'];
 	$privacy = $vars['privacy'];
@@ -38,7 +39,7 @@ function theme_advanced_link($vars){
 			$class = 'link';
 	}
 	if($class){
-		$attributes['class'][] = $class;
+		$attributes['class'][] = $class.($is_html ? '-html' : '');
 	}
 
 	switch($target){
@@ -55,14 +56,15 @@ function theme_advanced_link($vars){
 		$attributes['target'] = $target;
 	}
 
-	return l($label, $url, array('attributes' => $attributes));
+	return l($label, $url, array('attributes' => $attributes, 'html' => $is_html));
 }
 
 function theme_advanced_link_blocked($vars){
 	$label = $vars['label'];
+	$is_html = $vars['html'];
 	$type = $vars['type'];
 
 	$title = $type & ADVANCED_LINK_TYPE_LINK ? t('Private link') : t('Private document');
 
-	return '<span class="blocked-link" title="'.$title.'">'.$label.'</span>';
+	return $is_html ? $label : '<span class="blocked-link" title="'.$title.'">'.$label.'</span>';
 }

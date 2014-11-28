@@ -1,5 +1,15 @@
 # Advanced link
 
+## Version 1.2
+
+Date: 2014/11/28
+
+- New widget *advanced_link_properties_widget* for *advanced link* fields  
+Define url, target and privacy
+
+- New formatter *advanced_link_linked_image* for *image* fields  
+Define the field used to create the link of the image
+
 ## Version 1.1  
 
 Date: 2014/10/30

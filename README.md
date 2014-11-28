@@ -6,3 +6,7 @@ It includes basic css styles and icons for each link type.
 ## Dependencies
 
 - None
+
+## Notes
+
+[ChangeLog](CHANGELOG.md)

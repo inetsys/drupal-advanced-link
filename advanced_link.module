@@ -35,7 +35,8 @@ function advanced_link_theme($existing, $type, $theme, $path){
 		'advanced_link' => array(
 			'variables' => array(
 				'url' => null,
-				'label' => null,
+				'label' => '',
+				'html' => false,
 				'type' => null,
 				'target' => ADVANCED_LINK_TARGET_SELF,
 				'privacy' => ADVANCED_LINK_PRIVACY_PUBLIC,
@@ -44,7 +45,8 @@ function advanced_link_theme($existing, $type, $theme, $path){
 		),
 		'advanced_link_blocked' => array(
 			'variables' => array(
-				'label' => null,
+				'label' => '',
+				'html' => false,
 				'type' => null,
 			),
 			'file' => 'advanced_link.theme.inc',
@@ -68,17 +70,22 @@ function advanced_link_field_info(){
 /** Implementation of hook_field_is_empty */
 function advanced_link_field_is_empty($item, $field){
 	$url = trim($item['url']);
-	$label = trim($item['label']);
 
-	return empty($url) && empty($label);
+	return empty($url);
 }
 
 /** Implementation of hook_field_widget_info */
 function advanced_link_field_widget_info(){
 	return array(
 		'advanced_link_default_widget' => array(
-			'label' => t('Advanced link'),
-			'description' => t('Default form for extended links'),
+			'label' => t('Complete advanced link'),
+			'description' => t('Content, URL, type and privacy'),
+			'field types' => array('advanced_link'),
+			'settings' => array()
+		),
+		'advanced_link_properties_widget' => array(
+			'label' => t('Advanced link properties'),
+			'description' => t('URL, type and privacy'),
 			'field types' => array('advanced_link'),
 			'settings' => array()
 		),
@@ -91,39 +98,45 @@ function advanced_link_field_widget_form(&$form, &$form_state, $field, $instance
 		$form['#attached']['js']['advanced_link'] = drupal_get_path('module', 'advanced_link').'/advanced_link.js';
 	}
 
+	$widget_form = array();
+
 	$defaults = isset($items[$delta]) ? $items[$delta] : array();
 
 	$url_field_id = 'edit-'.str_replace('_', '-', $element['#field_name']).'-'.$element['#language'].'-'.$element['#delta'].'-url';
 
-	$element['url'] = array(
+	$widget_form['url'] = array(
 		'#type' => 'textfield',
 		'#title' => t('URL'),
 		'#description' => t('Local or full URL of this link'),
 		'#default_value' => isset($defaults['url']) ? $defaults['url'] : '',
 	);
 	if(module_exists('imce')){
-		$element['url']['#field_suffix'] = '<a href="#" class="advanced_link_imce" data-target="'.$url_field_id.'">Open file manager</a>';
+		$widget_form['url']['#field_suffix'] = '<a href="#" class="advanced_link_imce" data-target="'.$url_field_id.'">Open file manager</a>';
 	}
 
-	$element['label'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Link text'),
-		'#default_value' => isset($defaults['label']) ? $defaults['label'] : '',
-	);
-	$element['type'] = array(
-		'#type' => 'select',
-		'#title' => t('Type'),
-		'#options' => array(
-			ADVANCED_LINK_TYPE_LOCAL_LINK => t('Local link'),
-			ADVANCED_LINK_TYPE_EXTERNAL_LINK => t('External link'),
-			ADVANCED_LINK_TYPE_PDF_DOC => t('PDF document'),
-			ADVANCED_LINK_TYPE_WORD_DOC => t('Word document'),
-			ADVANCED_LINK_TYPE_EXCEL_DOC => t('Excel document'),
-			ADVANCED_LINK_TYPE_PPT_DOC => t('PPT document')
-		),
-		'#default_value' => isset($defaults['type']) ? $defaults['type'] : ADVANCED_LINK_TYPE_LOCAL_LINK,
-	);
-	$element['target'] = array(
+	if($instance['widget']['type'] == 'advanced_link_default_widget'){
+		$widget_form['label'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Link text'),
+			'#default_value' => isset($defaults['label']) ? $defaults['label'] : '',
+		);
+
+		$widget_form['type'] = array(
+			'#type' => 'select',
+			'#title' => t('Type'),
+			'#options' => array(
+				ADVANCED_LINK_TYPE_LOCAL_LINK => t('Local link'),
+				ADVANCED_LINK_TYPE_EXTERNAL_LINK => t('External link'),
+				ADVANCED_LINK_TYPE_PDF_DOC => t('PDF document'),
+				ADVANCED_LINK_TYPE_WORD_DOC => t('Word document'),
+				ADVANCED_LINK_TYPE_EXCEL_DOC => t('Excel document'),
+				ADVANCED_LINK_TYPE_PPT_DOC => t('PPT document')
+			),
+			'#default_value' => isset($defaults['type']) ? $defaults['type'] : ADVANCED_LINK_TYPE_LOCAL_LINK,
+		);
+	}
+
+	$widget_form['target'] = array(
 		'#type' => 'select',
 		'#title' => t('Open link'),
 		'#options' => array(
@@ -132,7 +145,7 @@ function advanced_link_field_widget_form(&$form, &$form_state, $field, $instance
 		),
 		'#default_value' => isset($defaults['target']) ? $defaults['target'] : ADVANCED_LINK_TARGET_SELF,
 	);
-	$element['privacy'] = array(
+	$widget_form['privacy'] = array(
 		'#type' => 'select',
 		'#title' => t('Privacy'),
 		'#options' => array(
@@ -141,6 +154,12 @@ function advanced_link_field_widget_form(&$form, &$form_state, $field, $instance
 		),
 		'#default_value' => isset($defaults['privacy']) ? $defaults['privacy'] : ADVANCED_LINK_PRIVACY_PUBLIC,
 	);
+
+	$element = array_merge($element, $widget_form);
+
+	if($field['cardinality'] == 1){
+		$element['#theme_wrappers'] = array('fieldset');
+	}
 
 	return $element;
 }
@@ -151,8 +170,81 @@ function advanced_link_field_formatter_info(){
 		'advanced_link_default_formatter' => array(
 			'label' => t('Default'),
 			'field types' => array('advanced_link'),
+		),
+		'advanced_link_linked_image' => array(
+			'label' => t('Link using field'),
+			'field types' => array('image'),
+			'settings' => array(
+				'linkable_field' => '',
+				'image_style' => '',
+			)
 		)
 	);
+}
+
+function advanced_link_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state){
+	//drupal_set_message('<pre>'.print_r($field, true).'</pre>');
+
+	$display = $instance['display'][$view_mode];
+	$settings = $display['settings'];
+
+	$element = array();
+
+	if($display['type'] == 'advanced_link_linked_image'){
+		$entity_type = $instance['entity_type'];
+		$bundle_name = $instance['bundle'];
+
+		$field_instances = field_info_instances($entity_type, $bundle_name);
+
+		// Link
+		$linkable_fields = array();
+		foreach($field_instances as $field_name => $field_instance){
+			$field = field_info_field($field_name);
+			if($field['type'] == 'advanced_link'){
+				$linkable_fields[$field_name] = $field_instance['label'];
+			}
+		}
+		$element['linkable_field'] = array(
+			'#title' => t('Link field'),
+			'#type' => 'select',
+			'#options' => $linkable_fields,
+			'#required' => true,
+			'#default_value' => $settings['linkable_field']
+		);
+
+		// Style
+		$image_styles = image_style_options(FALSE, PASS_THROUGH);
+		$element['image_style'] = array(
+			'#title' => t('Image style'),
+			'#type' => 'select',
+			'#default_value' => $settings['image_style'],
+			'#empty_option' => t('None (original image)'),
+			'#options' => $image_styles,
+		);
+	}
+
+	return $element;
+}
+
+function advanced_link_field_formatter_settings_summary($field, $instance, $view_mode){
+	$display = $instance['display'][$view_mode];
+	$settings = $display['settings'];
+
+	$summary = array();
+
+	if($display['type'] == 'advanced_link_linked_image'){
+		if(isset($settings['image_style']) && !empty($settings['image_style'])){
+			$image_styles = image_style_options(FALSE, PASS_THROUGH);
+			$summary[] = t('Image style: @style', array('@style' => $image_styles[$settings['image_style']]));
+		}else{
+			$summary[] = t('Original image');
+		}
+		if(isset($settings['linkable_field']) && !empty($settings['linkable_field'])){
+			$summary[] = t('Use field %field to link the image', array('%field' => $settings['linkable_field']));
+		}
+	}
+
+	return implode('<br />', $summary);
 }
 
 /** Implementation of hook_field_formatter_view */
@@ -169,6 +261,42 @@ function advanced_link_field_formatter_view($entity_type, $entity, $field, $inst
 				}
 
 				$element[$delta] = array('#markup' => $output);
+			}
+			break;
+
+		case 'advanced_link_linked_image':
+			$settings = $display['settings'];
+			$image_style = isset($settings['image_style']) ? $settings['image_style'] : false;
+			$linkable_field = isset($settings['linkable_field']) ? $settings['linkable_field'] : false;
+
+
+			foreach($items as $delta => $item){
+				$image_data = array(
+					'path' => $item['uri'],
+					'alt' => $item['alt'],
+					'title' => $item['title'],
+					'width' => $item['width'],
+					'height' => $item['height'],
+					'style_name' => $image_style
+				);
+				$image = $image_style ? theme('image_style', $image_data) : theme('image', $image_data);
+
+				if($linkable_field && $linkable_field_items = field_get_items($entity_type, $entity, $linkable_field, $langcode)){
+					$variables = $linkable_field_items[0];
+					$variables['html'] = true;
+					$variables['label'] = $image;
+
+					if($variables['privacy'] == ADVANCED_LINK_PRIVACY_PUBLIC || user_access('view private links')){
+						$output = theme('advanced_link', $variables);
+					}else{
+						$output = theme('advanced_link_blocked', $variables);
+					}
+				}else{
+					$output = $image;
+				}
+
+				$element[$delta] = array('#markup' => $output);
+				// $element[$delta] = array('#markup' => '<p>ENTITY</p><pre>'.print_r($entity->{$linkable_field}, true).'</pre>');
 			}
 			break;
 	}
