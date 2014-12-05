@@ -1,0 +1,9 @@
+.advanced_link_imce {
+	display: block;
+}
+.advanced_link_imce a {
+	display: inline-block;
+	min-height: 18px;
+	padding-left: 18px;
+	background: transparent url('../images/ico-browser.png') left center no-repeat;
+}

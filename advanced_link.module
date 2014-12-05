@@ -111,7 +111,8 @@ function advanced_link_field_widget_form(&$form, &$form_state, $field, $instance
 		'#default_value' => isset($defaults['url']) ? $defaults['url'] : '',
 	);
 	if(module_exists('imce')){
-		$widget_form['url']['#field_suffix'] = '<a href="#" class="advanced_link_imce" data-target="'.$url_field_id.'">Open file manager</a>';
+		$form['#attached']['css']['advanced_link'] =  drupal_get_path('module', 'advanced_link').'/css/advanced_link.admin.css';
+		$widget_form['url']['#field_prefix'] = '<div class="advanced_link_imce"><a href="#" data-target="'.$url_field_id.'">Open File Browser</a></div>';
 	}
 
 	if($instance['widget']['type'] == 'advanced_link_default_widget'){

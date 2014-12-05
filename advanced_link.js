@@ -27,7 +27,7 @@ function openImce(field){
 (function ($) {
 	Drupal.behaviors.advancedLink = {
 		attach: function(context){
-			var links = $('a.advanced_link_imce');
+			var links = $('.advanced_link_imce a');
 			$(links).each(function(i, e){
 				$(e).click(function(){
 					var field = $(this).attr('data-target');

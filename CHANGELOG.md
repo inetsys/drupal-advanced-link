@@ -1,5 +1,12 @@
 # Advanced link
 
+## Version 1,3
+
+Date: 2014/12/05
+
+- BAT styles  
+Restructured styles in base-admin-theme naming scheme.
+
 ## Version 1.2
 
 Date: 2014/11/28
